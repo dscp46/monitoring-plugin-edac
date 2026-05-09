@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+#DEBHELPER#
+
+case "$1" in
+    configure)
+        chmod +x /usr/lib/nagios/plugins/check_edac || true
+    ;;
+esac
+
+exit 0

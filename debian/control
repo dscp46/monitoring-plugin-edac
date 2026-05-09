@@ -1,0 +1,13 @@
+Source: monitoring-plugin-edac
+Section: utils
+Priority: optional
+Maintainer: Celestine GRAMAIZE <celestine+dev@gramaize.eu>
+Standards-Version: 4.6.2
+Build-Depends: debhelper-compat (= 13)
+
+Package: monitoring-plugin-edac
+Architecture: all
+Depends: ${misc:Depends}
+Description: Nagios plugin for monitoring EDAC ECC memory errors
+ Simple NRPE-compatible plugin to monitor ECC corrected and uncorrected
+ memory errors via Linux EDAC subsystem.
