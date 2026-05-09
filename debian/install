@@ -1,2 +1,2 @@
 check_edac usr/lib/nagios/plugins/
-nrpe.d/check_edac.cfg etc/nagios/
+nrpe.d/check_edac.cfg etc/nagios/nrpe.d/
