@@ -8,6 +8,7 @@ Build-Depends: debhelper-compat (= 13)
 Package: monitoring-plugin-edac
 Architecture: all
 Depends: ${misc:Depends}
+Recommends: nagios-nrpe-server
 Description: Nagios plugin for monitoring EDAC ECC memory errors
  Simple NRPE-compatible plugin to monitor ECC corrected and uncorrected
  memory errors via Linux EDAC subsystem.
