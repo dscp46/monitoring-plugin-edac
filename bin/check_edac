@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+# Default memory controller
+MC="${1:-mc0}"
+
+EDAC_PATH="/sys/devices/system/edac/mc/${MC}"
+STATE_FILE="/var/tmp/check_edac_${MC}.state"
+
+# UNKNOWN if EDAC controller missing
+if [ ! -d "$EDAC_PATH" ]; then
+    echo "UNKNOWN - EDAC controller ${MC} not found"
+    exit 3
+fi
+
+CE=$(cat "$EDAC_PATH/ce_count" 2>/dev/null)
+UE=$(cat "$EDAC_PATH/ue_count" 2>/dev/null)
+
+# Validate counters
+if ! [[ "$CE" =~ ^[0-9]+$ ]] || ! [[ "$UE" =~ ^[0-9]+$ ]]; then
+    echo "UNKNOWN - invalid EDAC counters for ${MC}"
+    exit 3
+fi
+
+# First run initialization
+if [ ! -f "$STATE_FILE" ]; then
+    echo "$CE $UE" > "$STATE_FILE"
+
+    echo "OK - baseline initialized for ${MC} | ce_total=$CE ue_total=$UE ce_delta=0 ue_delta=0"
+    exit 0
+fi
+
+read OLD_CE OLD_UE < "$STATE_FILE"
+
+DELTA_CE=$((CE - OLD_CE))
+DELTA_UE=$((UE - OLD_UE))
+
+# Update state file
+echo "$CE $UE" > "$STATE_FILE"
+
+# Counter reset handling (likely reboot)
+if [ "$DELTA_CE" -lt 0 ] || [ "$DELTA_UE" -lt 0 ]; then
+    echo "UNKNOWN - EDAC counters reset for ${MC} | ce_total=$CE ue_total=$UE ce_delta=0 ue_delta=0"
+    exit 3
+fi
+
+PERFDATA="| ce_total=$CE ue_total=$UE ce_delta=$DELTA_CE ue_delta=$DELTA_UE"
+
+# Critical: any uncorrected errors
+if [ "$DELTA_UE" -gt 0 ]; then
+    echo "CRITICAL - $DELTA_UE new uncorrected ECC errors on ${MC} $PERFDATA"
+    exit 2
+fi
+
+# Critical: excessive corrected errors
+if [ "$DELTA_CE" -gt 100 ]; then
+    echo "CRITICAL - $DELTA_CE new corrected ECC errors on ${MC} $PERFDATA"
+    exit 2
+fi
+
+# Warning: corrected errors occurred
+if [ "$DELTA_CE" -gt 0 ]; then
+    echo "WARNING - $DELTA_CE new corrected ECC errors on ${MC} $PERFDATA"
+    exit 1
+fi
+
+echo "OK - no new ECC errors on ${MC} $PERFDATA"
+exit 0
